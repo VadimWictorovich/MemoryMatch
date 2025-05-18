@@ -10,6 +10,14 @@ import SpriteKit
 import GameplayKit
 
 class GameViewController: UIViewController {
+    
+    enum GameState {
+        case mainMemu
+        case gameplay
+        case pause
+        case win
+        case openSettings
+    }
 
     override func viewDidLoad() {
         super.viewDidLoad()
