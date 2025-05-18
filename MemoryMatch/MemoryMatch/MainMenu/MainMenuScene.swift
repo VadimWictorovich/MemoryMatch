@@ -55,7 +55,7 @@ final class MainMenuScene: SKScene {
         addItems()
         addItems()
         
-        self.actionHandler = { [weak self] action in
+        actionHandler = { [weak self] action in
             switch action {
             case .startGame:
                 self?.viewModel.startGame()

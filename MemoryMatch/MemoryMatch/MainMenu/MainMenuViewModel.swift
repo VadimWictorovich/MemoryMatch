@@ -19,7 +19,7 @@ struct MainMenuModel{
     let nameImagePrivacyPolicy: String
 }
 
-protocol MainMenuViewModelProtocol {
+protocol MainMenuViewModelProtocol: AnyObject {
     func startGame()
     func openPrivacyPolicy()
 }
