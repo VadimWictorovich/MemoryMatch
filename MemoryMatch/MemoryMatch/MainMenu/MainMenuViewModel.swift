@@ -13,24 +13,27 @@ enum Actions {
     case privacyPolicy
 }
 
-struct MainMenuModel{
-    let nameImageBackground: String
-    let nameImageStartGame: String
-    let nameImagePrivacyPolicy: String
-}
-
 protocol MainMenuViewModelProtocol: AnyObject {
+    var actionHandler: (Actions) -> Void { get set }
+    
     func startGame()
     func openPrivacyPolicy()
 }
 
 final class MainMenuViewModel: MainMenuViewModelProtocol {
+    
+    var coordinator: CoordinatorProtocol
+    var actionHandler: (Actions) -> Void = { _ in }
+    
+    init (coordinator: CoordinatorProtocol) {
+        self.coordinator = coordinator
+    }
+    
     func startGame() {
-        // отправляемся на игру
+        coordinator.showGameplay()
     }
     
     func openPrivacyPolicy() {
-        // открывается окно с любой url вкладкой
+        coordinator.showPrivacyPolicy()
     }
-    
 }

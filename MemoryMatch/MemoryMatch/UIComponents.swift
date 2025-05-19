@@ -11,13 +11,11 @@ import SpriteKit
 class DefaultButton: SKSpriteNode {
     
     var action: (() -> Void) = { }
-    var isEnabled = true
     
-    init(nameImage: String, width: CGFloat) {
+    init(nameImage: String, width: CGFloat = 121, height: CGFloat = 121) {
         let texture = SKTexture(imageNamed: nameImage)
-        let aspectRatio = texture.size().height / texture.size().width
-        let size = CGSize(width: width, height: width * aspectRatio)
-
+        let size = CGSize(width: width, height: height)
+        
         super.init(texture: texture, color: .clear, size: size)
         isUserInteractionEnabled = true
     }
@@ -29,18 +27,20 @@ class DefaultButton: SKSpriteNode {
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
         if let touch = touches.first {
             let touchPoint = touch.location(in: self)
-            if self.contains(touchPoint) {
+            let rect = CGRect(
+                x: -self.size.width / 2,
+                y: -self.size.height / 2,
+                width: self.size.width,
+                height: self.size.height
+            )
+            print("touchPoint:", touchPoint)
+            print("rect:", rect)
+            if rect.contains(touchPoint) {
+                print("contains!")
                 action()
+            } else {
+                print("NOT contains!")
             }
         }
     }
-}
-
-enum CardState {
-    case open
-    case closed
-}
-
-final class Card: DefaultButton {
-    var state: CardState = .closed
 }
