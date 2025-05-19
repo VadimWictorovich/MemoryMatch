@@ -7,13 +7,21 @@
 
 import Foundation
 import SpriteKit
+import AudioToolbox
 
 class DefaultButton: SKSpriteNode {
     
+    var nameForImage: String {
+        didSet {
+            self.texture = SKTexture(imageNamed: nameForImage)
+        }
+    }
     var action: (() -> Void) = { }
+    var isEnabled = true
     
     init(nameImage: String, width: CGFloat = 121, height: CGFloat = 121) {
-        let texture = SKTexture(imageNamed: nameImage)
+        self.nameForImage = nameImage
+        let texture = SKTexture(imageNamed: nameForImage)
         let size = CGSize(width: width, height: height)
         
         super.init(texture: texture, color: .clear, size: size)
@@ -33,14 +41,21 @@ class DefaultButton: SKSpriteNode {
                 width: self.size.width,
                 height: self.size.height
             )
-            print("touchPoint:", touchPoint)
-            print("rect:", rect)
+
             if rect.contains(touchPoint) {
-                print("contains!")
+                playSoundAndVibration()
                 action()
-            } else {
-                print("NOT contains!")
             }
+        }
+    }
+    
+    private func playSoundAndVibration() {
+        if SoundVibrationManager.isSoundEnabled == true {
+            AudioServicesPlaySystemSound(1104)
+        }
+        if SoundVibrationManager.isVibrationEnabled == true {
+            let generator = UIImpactFeedbackGenerator(style: .medium)
+            generator.impactOccurred()
         }
     }
 }
@@ -70,4 +85,9 @@ final class Card: DefaultButton {
         self.texture = SKTexture(imageNamed: "Slot")
         isOpen = false
     }
+}
+
+final class SoundVibrationManager {
+    static var isSoundEnabled: Bool = true
+    static var isVibrationEnabled: Bool = true
 }

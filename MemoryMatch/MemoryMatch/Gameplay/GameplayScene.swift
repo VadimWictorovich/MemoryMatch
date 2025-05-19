@@ -12,7 +12,6 @@ import UIKit
 class GameplayScene: SKScene {
 
     var viewModel: GameplayViewModelProtocol
-    var acttionHandler: (GameplayActions) -> Void = { _ in }
     
     private var moviesValue = 0 {
         didSet {
@@ -39,7 +38,8 @@ class GameplayScene: SKScene {
         let scaledSize = CGSize.scaled(width: 121, height: 121, screenSize: self.size)
         let view = DefaultButton(nameImage: "Settings", width: scaledSize.width, height: scaledSize.height)
         view.action = { [weak self] in
-            self?.acttionHandler(.settings)
+//            self?.showSettings()
+            self?.showYouWin()
         }
         view.position = CGPoint(x: frame.midX - 150, y: frame.midY + 336)
         view.zPosition = 1
@@ -57,7 +57,7 @@ class GameplayScene: SKScene {
         let scaledSize = CGSize.scaled(width: 121, height: 121, screenSize: self.size)
         let view = DefaultButton(nameImage: "Pause", width: scaledSize.width, height: scaledSize.height)
         view.action = { [weak self] in
-            self?.acttionHandler(.pause)
+            self?.viewModel.acttionHandler(.pause)
         }
         view.position = CGPoint(x: frame.midX - 160, y: frame.midY - 320)
         view.zPosition = 1
@@ -68,7 +68,7 @@ class GameplayScene: SKScene {
         let scaledSize = CGSize.scaled(width: 121, height: 121, screenSize: self.size)
         let view = DefaultButton(nameImage: "Left", width: scaledSize.width, height: scaledSize.height)
         view.action = { [weak self] in
-            self?.acttionHandler(.cancelMove)
+            self?.viewModel.acttionHandler(.cancelMove)
         }
         view.position = CGPoint(x: frame.midX, y: frame.midY - 320)
         view.zPosition = 1
@@ -79,7 +79,7 @@ class GameplayScene: SKScene {
         let scaledSize = CGSize.scaled(width: 121, height: 121, screenSize: self.size)
         let view = DefaultButton(nameImage: "Undo", width: scaledSize.width, height: scaledSize.height)
         view.action = { [weak self] in
-            self?.acttionHandler(.restart)
+            self?.viewModel.acttionHandler(.restart)
         }
         view.position = CGPoint(x: frame.midX + 160, y: frame.midY - 320)
         view.zPosition = 1
@@ -95,17 +95,45 @@ class GameplayScene: SKScene {
         let screenAspectRatio = self.size.width / self.size.height
         
         if screenAspectRatio > aspectRatio {
-            // Экран шире чем изображение
             sprite.size.width = self.size.width
             sprite.size.height = self.size.width / aspectRatio
         } else {
-            // Экран уже чем изображение
             sprite.size.height = self.size.height
             sprite.size.width = self.size.height * aspectRatio
         }
         sprite.zPosition = -1
         sprite.isUserInteractionEnabled = false
         return sprite
+    }()
+    
+    private lazy var setings: Settings = {
+        let view = Settings(screenSize: self.size)
+        view.actionHandler = { [weak self] action in
+            switch action {
+            case .back:
+                view.removeFromParent()
+            case .sound:
+                self?.viewModel.acttionHandler(.soundToggle)
+            case .vibration:
+                self?.viewModel.acttionHandler(.vibroToggle)
+            }
+        }
+        view.position = .zero
+        return view
+    }()
+    
+    private lazy var youWin: YouWinNode = {
+        let view = YouWinNode(screenSize: self.size)
+        view.actionHandler = { [weak self] action in
+            switch action {
+            case .restart:
+                self?.viewModel.acttionHandler(.restart)
+            case .menu:
+                self?.viewModel.acttionHandler(.cancelMove)
+            }
+        }
+        view.position = .zero
+        return view
     }()
     
     init(size: CGSize, viewModel: GameplayViewModelProtocol) {
@@ -120,25 +148,15 @@ class GameplayScene: SKScene {
     override func didMove(to view: SKView) {
         super.didMove(to: view)
         addItems()
-        setupButtons()
+        viewModel.setupActions()
     }
     
-    private func setupButtons() {
-        acttionHandler = { [weak self] action in
-            
-            switch action {
-            case .flip:
-                self?.viewModel.flipCard()
-            case .settings:
-                self?.viewModel.openSettings()
-            case .pause:
-                self?.viewModel.pauseGame()
-            case .cancelMove:
-                self?.viewModel.cancelMove()
-            case .restart:
-                self?.viewModel.restartGame()
-            }
-        }
+    private func showSettings() {
+        addChild(setings)
+    }
+    
+    private func showYouWin() {
+        addChild(youWin)
     }
     
     private func addItems() {
@@ -152,7 +170,7 @@ class GameplayScene: SKScene {
     }
 }
 
-
+//MARK: - Card Table
 final class CardTable: SKNode {
     private let scaledSize: CGSize
     private var cards: [Card] = []
@@ -184,7 +202,6 @@ final class CardTable: SKNode {
         }
         cardPairs.shuffle()
 
-        // Центрируем сетку
         let buttonSize = scaledSize
         let totalWidth = CGFloat(columns) * buttonSize.width + CGFloat(columns - 1) * spacing
         let totalHeight = CGFloat(rows) * buttonSize.height + CGFloat(rows - 1) * spacing
@@ -214,14 +231,6 @@ final class CardTable: SKNode {
         guard !card.isOpen, !card.isMatched, openedCards.count < 2 else { return }
         card.showFront()
         
-        // Нативный системный звук (click)
-        AudioServicesPlaySystemSound(1104)
-        
-        // Вибрация (легкий тактильный отклик)
-        let generator = UIImpactFeedbackGenerator(style: .light)
-        generator.impactOccurred()
-        
-        // Визуальный эффект (если хочешь)
         showTapEffect(on: card)
         
         openedCards.append(card)
@@ -257,7 +266,6 @@ final class CardTable: SKNode {
     }
 
     private func showTapEffect(on card: Card) {
-        // Пример: вспышка (scale + fade)
         let flash = SKShapeNode(circleOfRadius: card.size.width / 2)
         flash.position = .zero
         flash.fillColor = .yellow
@@ -273,6 +281,205 @@ final class CardTable: SKNode {
         let sequence = SKAction.sequence([group, remove])
         flash.run(sequence)
     }
+}
+
+
+// MARK: - Settings
+final class Settings: SKNode {
+    
+    var screenSize: CGSize
+    private lazy var scaledSize = CGSize.scaled(width: 150, height: 150, screenSize: screenSize)
+    
+    enum Actions {
+        case back
+        case sound
+        case vibration
+    }
+    var actionHandler: ((Actions) -> Void) = { _ in }
+        
+    init(screenSize: CGSize) {
+        self.screenSize = screenSize
+        super.init()
+        
+        addItems()
+    }
+    
+    required init?(coder aDecoder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    private lazy var background: SKSpriteNode = {
+        let sprite = SKSpriteNode(color: UIColor(white: 0, alpha: 0.5), size: screenSize)
+        sprite.position = CGPoint(x: screenSize.width/2, y: screenSize.height/2)
+        sprite.zPosition = 100
+        return sprite
+    }()
+    
+    private lazy var board: SKSpriteNode = {
+        let texture = SKTexture(imageNamed: "Frame 2")
+        let sprite = SKSpriteNode(texture: texture)
+        let scaledSize = CGSize.scaled(width: 664, height: 771, screenSize: screenSize)
+        sprite.size = scaledSize
+        sprite.position = CGPoint(x: screenSize.width/2, y: screenSize.height/2)
+        sprite.zPosition = 101
+        return sprite
+    }()
+    
+    private lazy var onOffSound: DefaultButton = {
+        let view = DefaultButton(
+            nameImage: SoundVibrationManager.isSoundEnabled ? "Speaker" : "Mute Sound",
+            width: scaledSize.width,
+            height: scaledSize.height
+        )
+        view.action = { [weak self] in
+            self?.actionHandler(.sound)
+            self?.updateIcon()
+        }
+        view.position = CGPoint(x: screenSize.width/2, y: screenSize.height/2 + 70)
+        view.zPosition  = 102
+        return view
+    }()
+    
+    private lazy var onOffVibro: DefaultButton = {
+        let view = DefaultButton(
+            nameImage: SoundVibrationManager.isVibrationEnabled ? "Vibro" : "NoVibro",
+            width: scaledSize.width,
+            height: scaledSize.height
+        )
+        view.action = { [weak self] in
+            self?.actionHandler(.vibration)
+            self?.updateIcon()
+        }
+        view.position = CGPoint(x: screenSize.width/2, y: screenSize.height/2)
+        view.zPosition = 102
+        return view
+    }()
+    
+    private lazy var backButton: DefaultButton = {
+        let view = DefaultButton(
+            nameImage: "Left",
+            width: scaledSize.width,
+            height: scaledSize.height
+        )
+        view.action = { [weak self] in
+            self?.actionHandler(.back)
+        }
+        view.position = CGPoint(x: screenSize.width/2, y: screenSize.height/2 - 70)
+        view.zPosition = 102
+        return view
+    }()
+    
+    private func addItems() {
+        addChild(background)
+        addChild(board)
+        addChild(onOffSound)
+        addChild(onOffVibro)
+        addChild(backButton)
+    }
+    
+    private func updateIcon() {
+        onOffSound.nameForImage = SoundVibrationManager.isSoundEnabled ?  "Speaker" : "Mute Sound"
+        onOffVibro.nameForImage = SoundVibrationManager.isVibrationEnabled ? "Vibro" : "NoVibro"
+    }
+}
+
+// MARK: - YOU WIN
+final class YouWinNode: SKNode {
+    
+    var screenSize: CGSize
+    private lazy var scaledSizeForButton = CGSize.scaled(width: 121, height: 121, screenSize: screenSize)
+    
+    enum Actions {
+        case restart
+        case menu
+    }
+    var actionHandler: ((Actions) -> Void) = { _ in }
+        
+    init(screenSize: CGSize) {
+        self.screenSize = screenSize
+        super.init()
+        
+        addItems()
+    }
+    
+    required init?(coder aDecoder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    private lazy var background: SKSpriteNode = {
+        let sprite = SKSpriteNode(color: UIColor(white: 0, alpha: 0.8), size: screenSize)
+        sprite.position = CGPoint(x: screenSize.width/2, y: screenSize.height/2)
+        sprite.zPosition = 100
+        return sprite
+    }()
+    
+    private lazy var secondBackground: SKSpriteNode = {
+        let texture = SKTexture(imageNamed: "bg_1_1")
+        let sprite = SKSpriteNode(texture: texture)
+        let scaledSize = CGSize.scaled(width: 2400, height: 2400, screenSize: screenSize)
+        sprite.size = scaledSize
+        sprite.position = CGPoint(x: screenSize.width/2, y: screenSize.height/2)
+        sprite.zPosition = 101
+        return sprite
+    }()
+    
+    private lazy var board: SKSpriteNode = {
+        let texture = SKTexture(imageNamed: "Frame 1")
+        let sprite = SKSpriteNode(texture: texture)
+        let scaledSize = CGSize.scaled(width: 869, height: 462, screenSize: screenSize)
+        sprite.size = scaledSize
+        sprite.position = CGPoint(x: screenSize.width/2, y: screenSize.height/2 - 95)
+        sprite.zPosition = 102
+        return sprite
+    }()
+    
+    private lazy var youWin: SKSpriteNode = {
+        let texture = SKTexture(imageNamed: "you win")
+        let sprite = SKSpriteNode(texture: texture)
+        let scaledSize = CGSize.scaled(width: 1000, height: 1000, screenSize: screenSize)
+        sprite.size = scaledSize
+        sprite.position = CGPoint(x: screenSize.width/2, y: screenSize.height/2 + 50)
+        sprite.zPosition = 103
+        return sprite
+    }()
+    
+    private lazy var restartButton: DefaultButton = {
+        let view = DefaultButton(
+            nameImage: "Undo",
+            width: scaledSizeForButton.width,
+            height: scaledSizeForButton.height
+        )
+        view.action = { [weak self] in
+            self?.actionHandler(.restart)
+        }
+        view.position = CGPoint(x: screenSize.width/2 - 27, y: screenSize.height/2 - 220)
+        view.zPosition  = 102
+        return view
+    }()
+    
+    private lazy var menuButton: DefaultButton = {
+        let view = DefaultButton(
+            nameImage: "Menu",
+            width: scaledSizeForButton.width,
+            height: scaledSizeForButton.height
+        )
+        view.action = { [weak self] in
+            self?.actionHandler(.menu)
+        }
+        view.position = CGPoint(x: screenSize.width/2 + 27, y: screenSize.height/2 - 220)
+        view.zPosition  = 102
+        return view
+    }()
+    
+    private func addItems() {
+        addChild(background)
+        addChild(secondBackground)
+        addChild(board)
+        addChild(restartButton)
+        addChild(menuButton)
+        addChild(youWin)
+    }
+    
 }
 
 

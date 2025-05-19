@@ -12,11 +12,9 @@ protocol CoordinatorProtocol: AnyObject {
     func start()
     func showMainMenu()
     func showGameplay()
-    func showSettings()
     func showWinScreen()
     func showPrivacyPolicy()
 }
-
 
 final class Coordinator: CoordinatorProtocol {
     private weak var viewController: GameViewController?
@@ -39,19 +37,19 @@ final class Coordinator: CoordinatorProtocol {
     
     func showGameplay() {
         guard let view = viewController?.view as? SKView else { return }
-        let viewModel = GameplayViewModel()
+        let viewModel = GameplayViewModel(coordinator: self)
         let scene = GameplayScene(size: view.bounds.size, viewModel: viewModel)
         scene.scaleMode = .aspectFill
         view.presentScene(scene)
     }
     
-    func showSettings() {
-        guard let view = viewController?.view as? SKView else { return }
-        let viewModel = SettingsViewModel()
-        let scene = SettingsScene(size: view.bounds.size, viewModel: viewModel)
-        scene.scaleMode = .aspectFill
-        view.presentScene(scene)
-    }
+//    func showSettings() {
+//        guard let view = viewController?.view as? SKView else { return }
+//        let viewModel = SettingsViewModel()
+//        let scene = SettingsScene(size: view.bounds.size, viewModel: viewModel)
+//        scene.scaleMode = .aspectFill
+//        view.presentScene(scene)
+//    }
     
     func showWinScreen() {
         guard let view = viewController?.view as? SKView else { return }

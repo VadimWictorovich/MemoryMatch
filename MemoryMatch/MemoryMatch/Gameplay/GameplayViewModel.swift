@@ -29,11 +29,12 @@ struct CardModel {
 }
 
 enum GameplayActions {
-    case flip
     case settings
     case pause
     case cancelMove
     case restart
+    case soundToggle
+    case vibroToggle
 }
 
 protocol GameplayViewModelDelegate: AnyObject {
@@ -44,20 +45,45 @@ protocol GameplayViewModelDelegate: AnyObject {
 protocol GameplayViewModelProtocol: AnyObject {
     var cards: [CardModel] { get }
     var delegate: GameplayViewModelDelegate? { get set }
+    var acttionHandler: (GameplayActions) -> Void { get }
+    func setupActions()
     func chooseCard(at index: Int)
-    func flipCard()
     func openSettings()
     func pauseGame()
     func cancelMove()
     func restartGame()
     func setup(numbersOfPairsCards: Int)
+    func toggleSound()
+    func toggleVibro()
 }
 
 final class GameplayViewModel: GameplayViewModelProtocol {
     
+    var coordinator: CoordinatorProtocol
+    
     var cards: [CardModel] = []
     weak var delegate: GameplayViewModelDelegate?
     var indexOfOneAndOnlyFlippedCard: Int?
+    var acttionHandler: (GameplayActions) -> Void = { _ in }
+    
+    func setupActions() {
+        acttionHandler = { [weak self] action in
+            switch action {
+            case .settings:
+                self?.openSettings()
+            case .pause:
+                self?.pauseGame()
+            case .cancelMove:
+                self?.cancelMove()
+            case .restart:
+                self?.restartGame()
+            case .soundToggle:
+                self?.toggleSound()
+            case .vibroToggle:
+                self?.toggleVibro()
+            }
+        }
+    }
     
     func chooseCard(at index: Int) {
         if cards[index].isMatched == false {
@@ -94,10 +120,6 @@ final class GameplayViewModel: GameplayViewModelProtocol {
         delegate?.didUpdateCards(cards)
     }
     
-    func flipCard() {
-        
-    }
-    
     func openSettings() {
         
     }
@@ -107,12 +129,23 @@ final class GameplayViewModel: GameplayViewModelProtocol {
     }
     
     func cancelMove() {
-        
+        coordinator.showMainMenu()
     }
     
     func restartGame() {
-        
+        coordinator.showGameplay()
+    }
+    
+    func toggleSound() {
+        SoundVibrationManager.isSoundEnabled.toggle()
+    }
+    
+    func toggleVibro() {
+        SoundVibrationManager.isVibrationEnabled.toggle()
+    }
+    
+    init(coordinator: CoordinatorProtocol) {
+        self.coordinator = coordinator
     }
 }
-
 

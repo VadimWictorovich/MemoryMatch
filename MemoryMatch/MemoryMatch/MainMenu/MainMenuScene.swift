@@ -21,11 +21,9 @@ final class MainMenuScene: SKScene {
         let screenAspectRatio = self.size.width / self.size.height
         
         if screenAspectRatio > aspectRatio {
-            // Экран шире чем изображение
             sprite.size.width = self.size.width
             sprite.size.height = self.size.width / aspectRatio
         } else {
-            // Экран уже чем изображение
             sprite.size.height = self.size.height
             sprite.size.width = self.size.height * aspectRatio
         }
@@ -68,7 +66,7 @@ final class MainMenuScene: SKScene {
 
     private lazy var startGameButton: DefaultButton = {
         let scaledSize = CGSize.scaled(width: 628, height: 154, screenSize: self.size)
-        let view = DefaultButton(nameImage: "play_button", width: scaledSize.width, height: scaledSize.height)
+        let view = DefaultButton(nameImage: "Play_button", width: scaledSize.width, height: scaledSize.height)
         view.action = { [weak self] in
             self?.viewModel.actionHandler(.startGame)
         }
