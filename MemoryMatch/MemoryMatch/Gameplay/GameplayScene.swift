@@ -6,16 +6,13 @@
 //
 
 import SpriteKit
+import AudioToolbox
+import UIKit
 
 class GameplayScene: SKScene {
 
     var viewModel: GameplayViewModelProtocol
     var acttionHandler: (GameplayActions) -> Void = { _ in }
-    
-    private var collectionCardNames: [String] = [
-        "Slot 1", "Slot 2", "Slot 3", "Slot 4", "Slot 5",
-        "Slot 6", "Slot 7", "Slot 8", "Slot"
-    ]
     
     private var moviesValue = 0 {
         didSet {
@@ -52,7 +49,7 @@ class GameplayScene: SKScene {
     private lazy var cardTable: CardTable = {
         let cardSize = CGSize.scaled(width: 220, height: 220, screenSize: self.size)
         let table = CardTable(scaledSize: cardSize)
-        table.position = CGPoint(x: frame.midX, y: frame.midY) // по центру сцены
+        table.position = CGPoint(x: frame.midX, y: frame.midY)
         return table
     }()
     
@@ -124,7 +121,6 @@ class GameplayScene: SKScene {
         super.didMove(to: view)
         addItems()
         setupButtons()
-        cardTable.setupCollectionButtons()
     }
     
     private func setupButtons() {
@@ -154,70 +150,42 @@ class GameplayScene: SKScene {
         addChild(cancelMoveButton)
         addChild(restartButton)
     }
-    
-    
-    
-//    var nameImageDictionary = [String: SKTexture]()
-    var nameImageDictionary = [Int: String]()
-    var collectionCardNames1: [String] = [
-        "Slot 1", "Slot 2", "Slot 3", "Slot 4", "Slot 5",
-        "Slot 6", "Slot 7", "Slot 8", "Slot"
-    ]
-    
-    private func identifierImage(for card: CardModel) -> String {
-        if nameImageDictionary[card.identifier] == nil {
-            let randomIndex = Int(arc4random_uniform(UInt32(collectionCardNames.count - 1)))
-            nameImageDictionary[card.identifier] = collectionCardNames.remove(at: randomIndex)
-        }
-        
-        
-        return nameImageDictionary[card.identifier] ?? "?"
-    }
-    
-    
-    
-//    private func updateView() {
-//        for index in buttonCollection.indices {
-//            let button = buttonCollection[index]
-//            let card = viewModel.cards[index]
-//            
-//            if card.state == .open {
-//                button.nameImage() //открыть карточку
-//            } else if card.state == .closed {
-//                // тут закрая карточка
-//                button.nameImage = card.isMatched ? "matched" : "closed"
-//            }
-//        }
-//    }
 }
 
 
 final class CardTable: SKNode {
-    
     private let scaledSize: CGSize
-    private var movies = 0
-    private var collectionButtons: [DefaultButton] = []
-    
-    
-    
+    private var cards: [Card] = []
+    private var openedCards: [Card] = []
+    private let cardNames = [
+        "Slot 1", "Slot 2", "Slot 3", "Slot 4",
+        "Slot 5", "Slot 6", "Slot 7", "Slot 8"
+    ]
+
     init(scaledSize: CGSize) {
         self.scaledSize = scaledSize
         super.init()
+        setupCollectionCards()
     }
-    
+
     required init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-    
-    func setupCollectionButtons() {
+
+    private func setupCollectionCards() {
         let rows = 4
         let columns = 4
         let spacing: CGFloat = 10
 
-        // Размер одной кнопки
-        let buttonSize = scaledSize
+        var cardPairs: [(name: String, id: Int)] = []
+        for (i, name) in cardNames.enumerated() {
+            cardPairs.append((name, i))
+            cardPairs.append((name, i))
+        }
+        cardPairs.shuffle()
 
-        // Вычисляем смещение, чтобы сетка была по центру CardTable (0,0)
+        // Центрируем сетку
+        let buttonSize = scaledSize
         let totalWidth = CGFloat(columns) * buttonSize.width + CGFloat(columns - 1) * spacing
         let totalHeight = CGFloat(rows) * buttonSize.height + CGFloat(rows - 1) * spacing
         let startX = -totalWidth / 2 + buttonSize.width / 2
@@ -225,16 +193,86 @@ final class CardTable: SKNode {
 
         for row in 0..<rows {
             for col in 0..<columns {
-                let button = DefaultButton(nameImage: "Slot", width: buttonSize.width, height: buttonSize.height)
-                let x = startX + CGFloat(col) * (buttonSize.width + spacing)
-                let y = startY - CGFloat(row) * (buttonSize.height + spacing)
-                button.position = CGPoint(x: x, y: y)
-                addChild(button)
-                collectionButtons.append(button)
+                let idx = row * columns + col
+                let info = cardPairs[idx]
+                let card = Card(frontImageName: info.name, width: buttonSize.width, height: buttonSize.height, cardId: info.id)
+                card.position = CGPoint(
+                    x: startX + CGFloat(col) * (buttonSize.width + spacing),
+                    y: startY - CGFloat(row) * (buttonSize.height + spacing)
+                )
+                card.action = { [weak self, weak card] in
+                    guard let self = self, let card = card else { return }
+                    self.cardTapped(card)
+                }
+                addChild(card)
+                cards.append(card)
             }
         }
     }
-    
+
+    private func cardTapped(_ card: Card) {
+        guard !card.isOpen, !card.isMatched, openedCards.count < 2 else { return }
+        card.showFront()
+        
+        // Нативный системный звук (click)
+        AudioServicesPlaySystemSound(1104)
+        
+        // Вибрация (легкий тактильный отклик)
+        let generator = UIImpactFeedbackGenerator(style: .light)
+        generator.impactOccurred()
+        
+        // Визуальный эффект (если хочешь)
+        showTapEffect(on: card)
+        
+        openedCards.append(card)
+
+        if openedCards.count == 2 {
+            let first = openedCards[0]
+            let second = openedCards[1]
+            if first.cardId == second.cardId {
+                first.isMatched = true
+                second.isMatched = true
+                let fade = SKAction.fadeOut(withDuration: 0.3)
+                let remove = SKAction.removeFromParent()
+                let sequence = SKAction.sequence([fade, remove])
+                first.run(sequence)
+                second.run(sequence)
+                openedCards.removeAll()
+                checkWin()
+            } else {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
+                    first.showBack()
+                    second.showBack()
+                    self?.openedCards.removeAll()
+                }
+            }
+        }
+    }
+
+    private func checkWin() {
+        if cards.allSatisfy({ $0.isMatched }) {
+            // Победа! Можно вызвать делегат или замыкание для перехода к WinScene
+            print("You win!")
+        }
+    }
+
+    private func showTapEffect(on card: Card) {
+        // Пример: вспышка (scale + fade)
+        let flash = SKShapeNode(circleOfRadius: card.size.width / 2)
+        flash.position = .zero
+        flash.fillColor = .yellow
+        flash.strokeColor = .clear
+        flash.alpha = 0.5
+        flash.zPosition = 10
+        card.addChild(flash)
+        
+        let scale = SKAction.scale(to: 1.5, duration: 0.2)
+        let fade = SKAction.fadeOut(withDuration: 0.2)
+        let remove = SKAction.removeFromParent()
+        let group = SKAction.group([scale, fade])
+        let sequence = SKAction.sequence([group, remove])
+        flash.run(sequence)
+    }
 }
 
 

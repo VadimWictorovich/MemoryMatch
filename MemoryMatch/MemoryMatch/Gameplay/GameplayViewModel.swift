@@ -7,16 +7,6 @@
 
 import Foundation
 
-
-//struct GameplayModel {
-//    let movies: Int
-//    let time: String
-//    let nameSettingsButton: String
-//    let namePauseButton: String
-//    let nameCancelMoveButton: String
-//    let nameRestartButton: String
-//}
-
 struct CardModel {
     enum CardState {
         case open
@@ -46,21 +36,27 @@ enum GameplayActions {
     case restart
 }
 
+protocol GameplayViewModelDelegate: AnyObject {
+    func didUpdateCards(_ cards: [CardModel])
+    func didWinGame()
+}
+
 protocol GameplayViewModelProtocol: AnyObject {
-    var cards: [CardModel] { get set }
-    
+    var cards: [CardModel] { get }
+    var delegate: GameplayViewModelDelegate? { get set }
     func chooseCard(at index: Int)
     func flipCard()
     func openSettings()
     func pauseGame()
     func cancelMove()
     func restartGame()
+    func setup(numbersOfPairsCards: Int)
 }
 
 final class GameplayViewModel: GameplayViewModelProtocol {
     
-    var cards : [CardModel] = []
-    
+    var cards: [CardModel] = []
+    weak var delegate: GameplayViewModelDelegate?
     var indexOfOneAndOnlyFlippedCard: Int?
     
     func chooseCard(at index: Int) {
@@ -82,13 +78,20 @@ final class GameplayViewModel: GameplayViewModelProtocol {
                 indexOfOneAndOnlyFlippedCard = index
             }
         }
+        delegate?.didUpdateCards(cards)
+        if cards.allSatisfy({ $0.isMatched }) {
+            delegate?.didWinGame()
+        }
     }
     
     func setup(numbersOfPairsCards: Int) {
-        for _ in 1..<numbersOfPairsCards {
+        cards = []
+        for _ in 1...numbersOfPairsCards {
             let card = CardModel()
             cards += [card, card]
         }
+        cards.shuffle()
+        delegate?.didUpdateCards(cards)
     }
     
     func flipCard() {

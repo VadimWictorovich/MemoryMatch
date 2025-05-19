@@ -44,3 +44,30 @@ class DefaultButton: SKSpriteNode {
         }
     }
 }
+
+final class Card: DefaultButton {
+    var isOpen = false
+    var isMatched = false
+    let cardId: Int
+    let frontImageName: String
+
+    init(frontImageName: String, width: CGFloat, height: CGFloat, cardId: Int) {
+        self.cardId = cardId
+        self.frontImageName = frontImageName
+        super.init(nameImage: "Slot", width: width, height: height) // "Slot" — рубашка
+    }
+
+    required init?(coder aDecoder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    func showFront() {
+        self.texture = SKTexture(imageNamed: frontImageName)
+        isOpen = true
+    }
+
+    func showBack() {
+        self.texture = SKTexture(imageNamed: "Slot")
+        isOpen = false
+    }
+}
