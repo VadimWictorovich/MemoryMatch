@@ -6,13 +6,14 @@
 //
 
 import SpriteKit
+import SafariServices
+import UIKit
 
 
 protocol CoordinatorProtocol: AnyObject {
     func start()
     func showMainMenu()
     func showGameplay()
-    func showWinScreen()
     func showPrivacyPolicy()
 }
 
@@ -43,22 +44,15 @@ final class Coordinator: CoordinatorProtocol {
         view.presentScene(scene)
     }
     
-//    func showSettings() {
-//        guard let view = viewController?.view as? SKView else { return }
-//        let viewModel = SettingsViewModel()
-//        let scene = SettingsScene(size: view.bounds.size, viewModel: viewModel)
-//        scene.scaleMode = .aspectFill
-//        view.presentScene(scene)
-//    }
-    
-    func showWinScreen() {
-        guard let view = viewController?.view as? SKView else { return }
-        let scene = WinScene(size: view.bounds.size)
-        scene.scaleMode = .aspectFill
-        view.presentScene(scene)
-    }
-    
     func showPrivacyPolicy() {
+        guard let url = URL(string: "https://github.com/VadimWictorovich/MemoryMatch"),
+              let root = viewController else { return }
         
+        let vc = SFSafariViewController(url: url)
+        vc.preferredControlTintColor = .systemBlue
+        
+        DispatchQueue.main.async {
+            root.present(vc, animated: true)
+        }
     }
 }

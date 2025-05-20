@@ -29,8 +29,6 @@ struct CardModel {
 }
 
 enum GameplayActions {
-    case settings
-    case pause
     case cancelMove
     case restart
     case soundToggle
@@ -48,8 +46,6 @@ protocol GameplayViewModelProtocol: AnyObject {
     var acttionHandler: (GameplayActions) -> Void { get }
     func setupActions()
     func chooseCard(at index: Int)
-    func openSettings()
-    func pauseGame()
     func cancelMove()
     func restartGame()
     func setup(numbersOfPairsCards: Int)
@@ -69,10 +65,6 @@ final class GameplayViewModel: GameplayViewModelProtocol {
     func setupActions() {
         acttionHandler = { [weak self] action in
             switch action {
-            case .settings:
-                self?.openSettings()
-            case .pause:
-                self?.pauseGame()
             case .cancelMove:
                 self?.cancelMove()
             case .restart:
@@ -118,14 +110,6 @@ final class GameplayViewModel: GameplayViewModelProtocol {
         }
         cards.shuffle()
         delegate?.didUpdateCards(cards)
-    }
-    
-    func openSettings() {
-        
-    }
-    
-    func pauseGame() {
-        
     }
     
     func cancelMove() {

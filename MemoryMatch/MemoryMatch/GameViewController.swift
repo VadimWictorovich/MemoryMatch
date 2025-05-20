@@ -10,15 +10,6 @@ import SpriteKit
 import GameplayKit
 
 class GameViewController: UIViewController {
-    
-    enum GameState {
-        case mainMemu
-        case gameplay
-        case pause
-        case win
-        case openSettings
-    }
-    
     private var coordinator: Coordinator?
 
     override func viewDidLoad() {
@@ -38,18 +29,4 @@ class GameViewController: UIViewController {
         coordinator = Coordinator(viewController: self)
         coordinator?.start()
     }
-    
-    
-
-//    override var supportedInterfaceOrientations: UIInterfaceOrientationMask {
-//        if UIDevice.current.userInterfaceIdiom == .phone {
-//            return .allButUpsideDown
-//        } else {
-//            return .all
-//        }
-//    }
-//
-//    override var prefersStatusBarHidden: Bool {
-//        return true
-//    }
 }

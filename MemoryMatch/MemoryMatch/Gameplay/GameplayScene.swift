@@ -22,9 +22,6 @@ class GameplayScene: SKScene {
     private var timer: Timer?
     private var seconds = 0 {
         didSet {
-//            let minutes = seconds / 60
-//            let remainingSeconds = seconds % 60
-//            let value = String(format: "TIME: %02d:%02d", minutes, remainingSeconds)
             timerLabel.text = createTimeValue()
         }
     }
@@ -96,9 +93,6 @@ class GameplayScene: SKScene {
     private lazy var pauseButton: DefaultButton = {
         let scaledSize = CGSize.scaled(width: 121, height: 121, screenSize: self.size)
         let view = DefaultButton(nameImage: "Pause", width: scaledSize.width, height: scaledSize.height)
-        view.action = { [weak self] in
-            self?.viewModel.acttionHandler(.pause)
-        }
         view.position = CGPoint(x: frame.midX - 160, y: frame.midY - 320)
         view.zPosition = 1
         return view
@@ -574,7 +568,6 @@ final class YouWinNode: SKNode {
         addChild(moviesLabel)
         addChild(timerLabel)
     }
-    
 }
 
 
