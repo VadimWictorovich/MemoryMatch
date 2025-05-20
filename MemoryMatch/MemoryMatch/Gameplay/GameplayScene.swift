@@ -13,24 +13,52 @@ class GameplayScene: SKScene {
 
     var viewModel: GameplayViewModelProtocol
     
-    private var moviesValue = 0 {
+    private lazy var moviesValue = 0 {
         didSet {
-            moviesLabelValue = "MOVIES: \(moviesValue)"
+            moviesLabel.text = "MOVIES: \(moviesValue)"
         }
     }
-    private var moviesLabelValue = "MOVIES: 0"
-    private var timer: Timer?
     
+    private var timer: Timer?
+    private var seconds = 0 {
+        didSet {
+//            let minutes = seconds / 60
+//            let remainingSeconds = seconds % 60
+//            let value = String(format: "TIME: %02d:%02d", minutes, remainingSeconds)
+            timerLabel.text = createTimeValue()
+        }
+    }
+        
+    private var resultMoviesValue = ""
+    private var resultTimeValue = ""
     
     private lazy var displayBoard: SKSpriteNode = {
         let texture = SKTexture(imageNamed: "board")
         let view = SKSpriteNode(texture: texture)
         let scaledSize = CGSize.scaled(width: 973, height: 120, screenSize: self.size)
         view.size = scaledSize
-//        let label = SKLabelNode(text: "123")
-//        view.addChild(label)
         view.position = CGPoint(x: frame.midX, y: frame.midY + 284)
         view.zPosition = 1
+        return view
+    }()
+    
+    private lazy var moviesLabel: SKLabelNode = {
+        let view = SKLabelNode(text: "MOVIES: 0")
+        view.fontName = UIFont.boldSystemFont(ofSize: 40).fontName
+        view.fontSize = 18
+        view.fontColor = .white
+        view.position = CGPoint(x: frame.midX - 110, y: frame.midY + 277)
+        view.zPosition = 2
+        return view
+    }()
+    
+    private lazy var timerLabel: SKLabelNode = {
+        let view = SKLabelNode(text: "TIME: 00:00")
+        view.fontName = UIFont.boldSystemFont(ofSize: 40).fontName
+        view.fontSize = 18
+        view.fontColor = .white
+        view.position = CGPoint(x: frame.midX + 110, y: frame.midY + 277)
+        view.zPosition = 2
         return view
     }()
     
@@ -38,8 +66,8 @@ class GameplayScene: SKScene {
         let scaledSize = CGSize.scaled(width: 121, height: 121, screenSize: self.size)
         let view = DefaultButton(nameImage: "Settings", width: scaledSize.width, height: scaledSize.height)
         view.action = { [weak self] in
-//            self?.showSettings()
-            self?.showYouWin()
+            guard let self else { return }
+            self.showSettings()
         }
         view.position = CGPoint(x: frame.midX - 150, y: frame.midY + 336)
         view.zPosition = 1
@@ -49,6 +77,18 @@ class GameplayScene: SKScene {
     private lazy var cardTable: CardTable = {
         let cardSize = CGSize.scaled(width: 220, height: 220, screenSize: self.size)
         let table = CardTable(scaledSize: cardSize)
+        table.actionHandler = { [weak self] action in
+            guard let self else { return }
+            switch action {
+            case .updateMovies:
+                self.moviesValue += 1
+            case .showYouWin:
+                self.stopTimer()
+                self.resultMoviesValue = "MOVIES: \(String(self.moviesValue))"
+                self.resultTimeValue = self.createTimeValue()
+                self.showYouWin()
+            }
+        }
         table.position = CGPoint(x: frame.midX, y: frame.midY)
         return table
     }()
@@ -123,7 +163,7 @@ class GameplayScene: SKScene {
     }()
     
     private lazy var youWin: YouWinNode = {
-        let view = YouWinNode(screenSize: self.size)
+        let view = YouWinNode(screenSize: self.size, movies: resultMoviesValue, time: resultTimeValue)
         view.actionHandler = { [weak self] action in
             switch action {
             case .restart:
@@ -149,6 +189,26 @@ class GameplayScene: SKScene {
         super.didMove(to: view)
         addItems()
         viewModel.setupActions()
+        startTimer()
+    }
+    
+    private func startTimer() {
+        seconds = 0
+        timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+            self?.seconds += 1
+        }
+    }
+    
+    private func stopTimer() {
+        timer?.invalidate()
+        timer = nil
+    }
+    
+    private func createTimeValue() -> String {
+        let minutes = seconds / 60
+        let remainingSeconds = seconds % 60
+        let value = String(format: "TIME: %02d:%02d", minutes, remainingSeconds)
+        return value
     }
     
     private func showSettings() {
@@ -167,6 +227,8 @@ class GameplayScene: SKScene {
         addChild(pauseButton)
         addChild(cancelMoveButton)
         addChild(restartButton)
+        addChild(moviesLabel)
+        addChild(timerLabel)
     }
 }
 
@@ -179,6 +241,12 @@ final class CardTable: SKNode {
         "Slot 1", "Slot 2", "Slot 3", "Slot 4",
         "Slot 5", "Slot 6", "Slot 7", "Slot 8"
     ]
+    
+    enum ActionsCardTable {
+        case updateMovies
+        case showYouWin
+    }
+    var actionHandler: (ActionsCardTable) -> Void = { _ in }
 
     init(scaledSize: CGSize) {
         self.scaledSize = scaledSize
@@ -236,6 +304,8 @@ final class CardTable: SKNode {
         openedCards.append(card)
 
         if openedCards.count == 2 {
+            actionHandler(.updateMovies)
+            
             let first = openedCards[0]
             let second = openedCards[1]
             if first.cardId == second.cardId {
@@ -260,8 +330,7 @@ final class CardTable: SKNode {
 
     private func checkWin() {
         if cards.allSatisfy({ $0.isMatched }) {
-            // Победа! Можно вызвать делегат или замыкание для перехода к WinScene
-            print("You win!")
+            actionHandler(.showYouWin)
         }
     }
 
@@ -387,6 +456,8 @@ final class Settings: SKNode {
 final class YouWinNode: SKNode {
     
     var screenSize: CGSize
+    var moviesValue: String
+    var timerValue: String
     private lazy var scaledSizeForButton = CGSize.scaled(width: 121, height: 121, screenSize: screenSize)
     
     enum Actions {
@@ -395,8 +466,10 @@ final class YouWinNode: SKNode {
     }
     var actionHandler: ((Actions) -> Void) = { _ in }
         
-    init(screenSize: CGSize) {
+    init(screenSize: CGSize, movies: String, time: String) {
         self.screenSize = screenSize
+        self.moviesValue = movies
+        self.timerValue = time
         super.init()
         
         addItems()
@@ -443,6 +516,26 @@ final class YouWinNode: SKNode {
         return sprite
     }()
     
+    private lazy var moviesLabel: SKLabelNode = {
+        let view = SKLabelNode(text: moviesValue)
+        view.fontName = UIFont.boldSystemFont(ofSize: 40).fontName
+        view.fontSize = 18
+        view.fontColor = .white
+        view.position = CGPoint(x: screenSize.width/2, y: screenSize.height/2 - 115)
+        view.zPosition = 104
+        return view
+    }()
+    
+    private lazy var timerLabel: SKLabelNode = {
+        let view = SKLabelNode(text: timerValue)
+        view.fontName = UIFont.boldSystemFont(ofSize: 40).fontName
+        view.fontSize = 18
+        view.fontColor = .white
+        view.position = CGPoint(x: screenSize.width/2, y: screenSize.height/2 - 135)
+        view.zPosition = 104
+        return view
+    }()
+    
     private lazy var restartButton: DefaultButton = {
         let view = DefaultButton(
             nameImage: "Undo",
@@ -478,6 +571,8 @@ final class YouWinNode: SKNode {
         addChild(restartButton)
         addChild(menuButton)
         addChild(youWin)
+        addChild(moviesLabel)
+        addChild(timerLabel)
     }
     
 }
