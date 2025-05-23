@@ -8,9 +8,7 @@
 import SpriteKit
 
 extension SKSpriteNode {
-    func scaleToFitScreen() {
-        guard let scene = self.scene else { return }
-        
+    func scaleToFitScreen(scene: SKScene) {        
         let aspectRatio = self.size.width / self.size.height
         let screenAspectRatio = scene.size.width / scene.size.height
         
@@ -50,3 +48,39 @@ extension CGSize {
         CGSize(width: width, height: height).scaleToScreenWidth(screenSize)
     }
 }
+
+import SpriteKit
+
+extension CGPoint {
+    static func relative(
+        xPercent: CGFloat,
+        yPercent: CGFloat,
+        sceneSize: CGSize
+    ) -> CGPoint {
+        return CGPoint(
+            x: sceneSize.width * xPercent,
+            y: sceneSize.height * yPercent
+        )
+    }
+
+    static func centered(
+        yPercent: CGFloat,
+        sceneSize: CGSize
+    ) -> CGPoint {
+        return CGPoint(
+            x: sceneSize.width * 0.5,
+            y: sceneSize.height * yPercent
+        )
+    }
+
+    static func middle(
+        xPercent: CGFloat,
+        sceneSize: CGSize
+    ) -> CGPoint {
+        return CGPoint(
+            x: sceneSize.width * xPercent,
+            y: sceneSize.height * 0.5
+        )
+    }
+}
+

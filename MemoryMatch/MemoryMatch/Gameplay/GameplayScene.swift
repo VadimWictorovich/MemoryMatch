@@ -34,7 +34,7 @@ class GameplayScene: SKScene {
         let view = SKSpriteNode(texture: texture)
         let scaledSize = CGSize.scaled(width: 973, height: 120, screenSize: self.size)
         view.size = scaledSize
-        view.position = CGPoint(x: frame.midX, y: frame.midY + 284)
+        view.position = .centered(yPercent: 0.81, sceneSize: self.size)
         view.zPosition = 1
         return view
     }()
@@ -44,7 +44,7 @@ class GameplayScene: SKScene {
         view.fontName = UIFont.boldSystemFont(ofSize: 40).fontName
         view.fontSize = 18
         view.fontColor = .white
-        view.position = CGPoint(x: frame.midX - 110, y: frame.midY + 277)
+        view.position = .relative(xPercent: 0.23, yPercent: 0.8015, sceneSize: self.size)
         view.zPosition = 2
         return view
     }()
@@ -54,7 +54,7 @@ class GameplayScene: SKScene {
         view.fontName = UIFont.boldSystemFont(ofSize: 40).fontName
         view.fontSize = 18
         view.fontColor = .white
-        view.position = CGPoint(x: frame.midX + 110, y: frame.midY + 277)
+        view.position = .relative(xPercent: 0.77, yPercent: 0.8015, sceneSize: self.size)
         view.zPosition = 2
         return view
     }()
@@ -66,7 +66,7 @@ class GameplayScene: SKScene {
             guard let self else { return }
             self.showSettings()
         }
-        view.position = CGPoint(x: frame.midX - 150, y: frame.midY + 336)
+        view.position = .relative(xPercent: 0.14, yPercent: 0.89, sceneSize: self.size)
         view.zPosition = 1
         return view
     }()
@@ -93,7 +93,7 @@ class GameplayScene: SKScene {
     private lazy var pauseButton: DefaultButton = {
         let scaledSize = CGSize.scaled(width: 121, height: 121, screenSize: self.size)
         let view = DefaultButton(nameImage: "Pause", width: scaledSize.width, height: scaledSize.height)
-        view.position = CGPoint(x: frame.midX - 160, y: frame.midY - 320)
+        view.position = .relative(xPercent: 0.14, yPercent: 0.18, sceneSize: self.size)
         view.zPosition = 1
         return view
     }()
@@ -104,7 +104,7 @@ class GameplayScene: SKScene {
         view.action = { [weak self] in
             self?.viewModel.acttionHandler(.cancelMove)
         }
-        view.position = CGPoint(x: frame.midX, y: frame.midY - 320)
+        view.position = .centered(yPercent: 0.18, sceneSize: self.size)
         view.zPosition = 1
         return view
     }()
@@ -115,7 +115,7 @@ class GameplayScene: SKScene {
         view.action = { [weak self] in
             self?.viewModel.acttionHandler(.restart)
         }
-        view.position = CGPoint(x: frame.midX + 160, y: frame.midY - 320)
+        view.position = .relative(xPercent: 0.86, yPercent: 0.18, sceneSize: self.size)
         view.zPosition = 1
         return view
     }()
@@ -124,17 +124,7 @@ class GameplayScene: SKScene {
         let texture = SKTexture(imageNamed: "bg_2")
         let sprite = SKSpriteNode(texture: texture)
         sprite.position = CGPoint(x: frame.midX, y: frame.midY)
-        
-        let aspectRatio = texture.size().width / texture.size().height
-        let screenAspectRatio = self.size.width / self.size.height
-        
-        if screenAspectRatio > aspectRatio {
-            sprite.size.width = self.size.width
-            sprite.size.height = self.size.width / aspectRatio
-        } else {
-            sprite.size.height = self.size.height
-            sprite.size.width = self.size.height * aspectRatio
-        }
+        sprite.scaleToFitScreen(scene: self)
         sprite.zPosition = -1
         sprite.isUserInteractionEnabled = false
         return sprite

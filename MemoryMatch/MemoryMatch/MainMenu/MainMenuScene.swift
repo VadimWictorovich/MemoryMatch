@@ -16,18 +16,7 @@ final class MainMenuScene: SKScene {
         let texture = SKTexture(imageNamed: "bg_1")
         let sprite = SKSpriteNode(texture: texture)
         sprite.position = CGPoint(x: frame.midX, y: frame.midY)
-        
-        let aspectRatio = texture.size().width / texture.size().height
-        let screenAspectRatio = self.size.width / self.size.height
-        
-        if screenAspectRatio > aspectRatio {
-            sprite.size.width = self.size.width
-            sprite.size.height = self.size.width / aspectRatio
-        } else {
-            sprite.size.height = self.size.height
-            sprite.size.width = self.size.height * aspectRatio
-        }
-        
+        sprite.scaleToFitScreen(scene: self)
         sprite.zPosition = -2
         sprite.isUserInteractionEnabled = false
         return sprite
@@ -37,18 +26,7 @@ final class MainMenuScene: SKScene {
         let texture = SKTexture(imageNamed: "bg_1_1")
         let sprite = SKSpriteNode(texture: texture)
         sprite.position = CGPoint(x: frame.midX, y: frame.midY)
-        
-        let aspectRatio = texture.size().width / texture.size().height
-        let screenAspectRatio = self.size.width / self.size.height
-        
-        if screenAspectRatio > aspectRatio {
-            sprite.size.width = self.size.width
-            sprite.size.height = self.size.width / aspectRatio
-        } else {
-            sprite.size.height = self.size.height
-            sprite.size.width = self.size.height * aspectRatio
-        }
-        
+        sprite.scaleToFitScreen(scene: self)
         sprite.zPosition = -1
         sprite.isUserInteractionEnabled = false
         return sprite
